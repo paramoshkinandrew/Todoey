@@ -10,14 +10,14 @@ import UIKit
 
 class TodoListViewController: UITableViewController {
     
-    var itemArray = ["First", "Second", "Third"]
+    var itemArray: [Item] = []
     
     let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if let items = defaults.array(forKey: "TodoListArray") as? [String] {
+        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
             itemArray = items
         }
     }
@@ -26,7 +26,8 @@ class TodoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TodoItemCell", for: indexPath)
-        cell.textLabel?.text = itemArray[indexPath.row]
+        cell.textLabel?.text = itemArray[indexPath.row].title
+        cell.accessoryType = itemArray[indexPath.row].done ? .checkmark : .none
         
         return cell
     }
@@ -38,14 +39,9 @@ class TodoListViewController: UITableViewController {
     // MARK: - UITableViewDelegate Methods
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // Setting or removing checkmark
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        } else {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
-        // I've called this method in order to remove the cell highlight
-        tableView.deselectRow(at: indexPath, animated: true)
+        // Changing done mark and reload data
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        tableView.reloadData()
     }
     
     // MARK: - IBActions
@@ -63,10 +59,8 @@ class TodoListViewController: UITableViewController {
         let action = UIAlertAction(title: "Add item", style: .default) { (action) in
             if let newTodoItemText = actionTextField?.text {
                 if newTodoItemText.count > 0 {
-                    self.itemArray.append(newTodoItemText)
-                    
+                    self.itemArray.append(Item(title: newTodoItemText))
                     self.defaults.set(self.itemArray, forKey: "TodoListArray")
-                    
                     self.tableView.reloadData()
                 }
             }
