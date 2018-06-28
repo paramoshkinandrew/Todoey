@@ -12,13 +12,31 @@ class TodoListViewController: UITableViewController {
     
     var itemArray: [Item] = []
     
-    let defaults = UserDefaults.standard
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
-            itemArray = items
+        loadData()
+    }
+    
+    func saveData() {
+        let encoder = PropertyListEncoder()
+        do {
+            let data: Data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print("Saving new todo item error \(error)")
+        }
+    }
+    
+    func loadData() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("Error on items load: \(error)")
+            }
         }
     }
     
@@ -41,6 +59,7 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // Changing done mark and reload data
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        saveData()
         tableView.reloadData()
     }
     
@@ -60,7 +79,7 @@ class TodoListViewController: UITableViewController {
             if let newTodoItemText = actionTextField?.text {
                 if newTodoItemText.count > 0 {
                     self.itemArray.append(Item(title: newTodoItemText))
-                    self.defaults.set(self.itemArray, forKey: "TodoListArray")
+                    self.saveData()
                     self.tableView.reloadData()
                 }
             }
