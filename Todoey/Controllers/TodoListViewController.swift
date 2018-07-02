@@ -11,12 +11,18 @@ import CoreData
 
 class TodoListViewController: UITableViewController {
     
+    var selectedCategory: Category? {
+        // Called just after selectedCategory has been set
+        didSet {
+            loadData()
+        }
+    }
+    
     var itemArray: [Item] = []
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        loadData()
     }
     
     func saveData() {
@@ -28,6 +34,14 @@ class TodoListViewController: UITableViewController {
     }
     
     func loadData(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
+        let predicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory?.name ?? "")
+        // Append new predicate as AND
+        if request.predicate != nil {
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [request.predicate!, predicate])
+        } else {
+            request.predicate = predicate
+        }
+        
         do {
             itemArray = try context.fetch(request)
         } catch {
@@ -75,7 +89,11 @@ class TodoListViewController: UITableViewController {
             if let newTodoItemText = actionTextField?.text {
                 if newTodoItemText.count > 0 {
                     
-                    let item = Item(title: newTodoItemText, context: self.context)
+                    let item = Item(context: self.context)
+                    item.parentCategory = self.selectedCategory
+                    item.title = newTodoItemText
+                    item.done = false
+                    
                     self.itemArray.append(item)
                     self.saveData()
                     self.tableView.reloadData()
