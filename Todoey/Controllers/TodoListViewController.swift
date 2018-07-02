@@ -7,12 +7,12 @@
 //
 
 import UIKit
+import CoreData
 
 class TodoListViewController: UITableViewController {
     
     var itemArray: [Item] = []
-    
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -20,23 +20,19 @@ class TodoListViewController: UITableViewController {
     }
     
     func saveData() {
-        let encoder = PropertyListEncoder()
         do {
-            let data: Data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
+            try context.save()
         } catch {
-            print("Saving new todo item error \(error)")
+            print("Error saving context \(error)")
         }
     }
     
     func loadData() {
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            let decoder = PropertyListDecoder()
-            do {
-                itemArray = try decoder.decode([Item].self, from: data)
-            } catch {
-                print("Error on items load: \(error)")
-            }
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        do {
+            itemArray = try context.fetch(request)
+        } catch {
+            print("Error fetching data from context: \(error)")
         }
     }
     
@@ -78,7 +74,9 @@ class TodoListViewController: UITableViewController {
         let action = UIAlertAction(title: "Add item", style: .default) { (action) in
             if let newTodoItemText = actionTextField?.text {
                 if newTodoItemText.count > 0 {
-                    self.itemArray.append(Item(title: newTodoItemText))
+                    
+                    let item = Item(title: newTodoItemText, context: self.context)
+                    self.itemArray.append(item)
                     self.saveData()
                     self.tableView.reloadData()
                 }

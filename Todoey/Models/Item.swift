@@ -7,13 +7,12 @@
 //
 
 import Foundation
+import CoreData
 
-class Item: Codable {
-    var title: String = ""
-    var done: Bool = false
+class Item: NSManagedObject {
     
-    convenience init(title: String) {
-        self.init()
+    convenience init(title: String, context: NSManagedObjectContext) {
+        self.init(context: context)
         self.title = title
     }
 }
